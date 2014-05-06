@@ -9,8 +9,9 @@ It includes column chooser, search filters, row selection, subgrid expansion, pa
 To enable, make set property to true when initializing object
 
 To make it function, you must include these libs:
-@requires json2.js - //cdn.jsdelivr.net/json2/0.1/json2.min.js (JSON serializer)
-@requires jstorage.js - //cdn.jsdelivr.net/jstorage/0.1/jstorage.min.js (jStorage plugin)
+
+1) json2.js - //cdn.jsdelivr.net/json2/0.1/json2.min.js (JSON serializer)
+2) jstorage.js - //cdn.jsdelivr.net/jstorage/0.1/jstorage.min.js (jStorage plugin)
 
 Sample
 ------
