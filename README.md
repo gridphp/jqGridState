@@ -1,7 +1,9 @@
 jqGridState
 ===========
 
-NOTE: This is Github migration of bitbucket's rpgkaiser repo & extended by gridphp.
+NOTE:
+- This is Github migration of bitbucket's [rpgkaiser](https://bitbucket.org/rpgkaiser/jqgridstate) Repo
+- Extended by Abu to make compatible with jqGrid v4.6.0
 
 This jqGrid plugin persist various settings of jqGrid on page refresh. 
 It includes column chooser, search filters, row selection, subgrid expansion, pager & column order.
