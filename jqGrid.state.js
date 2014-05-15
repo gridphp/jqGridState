@@ -1,10 +1,11 @@
-/*
+/**
 *	JQGrid state managment
 *	@requires json2.js - //cdn.jsdelivr.net/json2/0.1/json2.min.js (JSON serializer)
 *	@requires jstorage.js - //cdn.jsdelivr.net/jstorage/0.1/jstorage.min.js (jStorage plugin)
-*	It will persist various settings of jqGrid on page refresh
-*	It includes: column chooser display, search filters, row selection, subgrid expansion, pager, column order
-*	To enable, make set property to true when initializing object
+*	- It will persist various settings of jqGrid on page refresh
+*	- It includes: column chooser display, search filters, row selection, subgrid expansion, pager, column order
+*	- To enable, make set property to true when initializing object
+*	- Revamped selection persistance, removed old version
 */
 
 var nonModelColumns = ["cb", "subgrid", "rn"];
@@ -101,9 +102,6 @@ function GridState(options) {
 		if (this.stateOpts.filters)
 			this.refreshFilters(grid);
 
-		if (this.stateOpts.selection)
-			this.refreshSelection(grid);
-
 		if (this.stateOpts.pager)
 			this.refreshPagerData(grid);
 
@@ -175,13 +173,6 @@ function GridState(options) {
 
 		return this;
 	};
-	this.refreshSelection = function (grid) {
-		this.selRows = grid.getGridParam('multiselect')
-					   ? grid.getGridParam('selarrrow')
-					   : [grid.getGridParam('selrow')];
-
-		return this;
-	};
 	this.refreshPagerData = function (grid) {
 		this.pagerData = {
 			page: grid.getGridParam('page'),
@@ -217,13 +208,6 @@ function GridState(options) {
 			}
 
 			gridOpts.shrinkToFit = true;
-		}
-
-		if (this.stateOpts.selection && this.selRows.length > 0) {
-			if (gridOpts.multiselect)
-				gridOpts.selarrrow = this.selRows;
-			else
-				gridOpts.selrow = this.selRows[0];
 		}
 
 		if (this.stateOpts.pager && this.pagerData) {
@@ -342,6 +326,56 @@ function GridState(options) {
 						evts.loadBeforeSend.call(this, xmlHttpReq);
 				};
 
+				// revamped selection persistance using following link, removed old version
+				// http://stackoverflow.com/questions/18502592/make-jqgrid-multiselect-selection-persist-following-pagination-toolbar-search/22014302#22014302
+
+				if (typeof (opts.onSelectAll) !== 'undefined')
+					overrEvts.onSelectAll = opts.onSelectAll;
+
+				opts.onSelectAll = function (rowIds, status) {
+					var grid = $(gridSelector);
+					var gState = grid.gridState();
+					if (gState) {
+
+						if (status === true) 
+						{
+							for (var i = 0; i < rowIds.length; i++) {
+								gState.selRows[rowIds[i]] = true;
+							}
+						} 
+						else 
+						{
+							for (var i = 0; i < rowIds.length; i++) {
+								delete gState.selRows[rowIds[i]];
+							}
+						}
+
+						gState.save();
+					}
+
+					var evts = grid.data('overrEvents');
+					if (evts && evts.onSelectAll)
+						evts.onSelectAll.call(this);
+				};
+				
+				opts.onSelectRow = function (rowId, status, e) {
+					var grid = $(gridSelector);
+					var gState = grid.gridState();
+					if (gState) {
+
+						if (status === false) {
+							delete gState.selRows[rowId];
+						} else {
+							gState.selRows[rowId] = status;
+						}
+						gState.save();
+					}
+
+					var evts = grid.data('overrEvents');
+					if (evts && evts.onSelectRow)
+						evts.onSelectRow.call(this);
+				};
+
 				if (typeof (opts.gridComplete) !== 'undefined')
 					overrEvts.gridComplete = opts.gridComplete;
 
@@ -349,13 +383,12 @@ function GridState(options) {
 					var grid = $(gridSelector);
 					var gState = grid.gridState();
 					if (gState) {
-						var selRows = gState.selRows;
-
-						grid.resetSelection();
-						$(selRows).each(function (index, elem) {
-							grid.setSelection(elem);
-						});
-
+						
+						for (var rowId in gState.selRows) {
+							if (gState.selRows[rowId] == true)
+								grid.setSelection(rowId, true);
+						}						
+						
 						gState.updateExpansion(grid);
 					}
 
@@ -564,38 +597,6 @@ function GridState(options) {
 			$.extend($.fn.searchGrid, $.fn._baseSearchGrid);
 		}
 
-		if ($.fn.setSelection) {
-			$.jgrid.extend({
-				_baseSetSelection: $.fn.setSelection,
-				setSelection: function (selection, onsr) {
-					this._baseSetSelection.call(this, selection, onsr);
-					var gState = this.gridState();
-					if (gState) {
-						gState.refreshSelection(this);
-						gState.save();
-					}
-				}
-			});
-
-			$.extend($.fn.setSelection, $.fn._baseSetSelection);
-		}
-
-		if ($.fn.resetSelection) {
-			$.jgrid.extend({
-				_baseResetSelection: $.fn.resetSelection,
-				resetSelection: function () {
-					this._baseResetSelection.call(this);
-					var gState = this.gridState();
-					if (gState) {
-						gState.selRows = [];
-						gState.save();
-					}
-				}
-			});
-
-			$.extend($.fn.resetSelection, $.fn._baseResetSelection);
-		}
-
 		$.jgrid.extend({
 			gridState: function (gState) {
 				if (gState === null) {
@@ -616,4 +617,4 @@ function GridState(options) {
 			}
 		});
 	}
-})(jQuery);	
+})(jQuery);
