@@ -465,6 +465,10 @@ function GridState(options) {
 			$.jgrid.extend({
 				_baseShowHideCol: $.fn.showHideCol,
 				showHideCol: function (colname, show) {
+					
+					// fix to readjust width after new column selection
+		    			var oldWidth = this.jqGrid("getGridParam", "width");
+
 					var result = this._baseShowHideCol.call(this, colname, show);
 					var gState = this.gridState();
 					if (gState) {
@@ -472,6 +476,8 @@ function GridState(options) {
 						gState.save();
 					}
 
+		        		this.jqGrid("setGridWidth", oldWidth);
+		        		
 					return result;
 				}
 			});
