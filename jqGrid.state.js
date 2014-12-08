@@ -180,7 +180,6 @@ function GridState(options) {
 			if (prmNames.search && postData[prmNames.search]) {
 				searchBtn.parent().addClass('ui-state-default ui-corner-all');
 				this.filtersData = JSON.parse(fltrData);
-				alert(JSON.stringify(this.filtersData));
 			}
 			else if (fltrData)
 			{
