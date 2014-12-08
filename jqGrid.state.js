@@ -289,7 +289,7 @@ function GridState(options) {
 							 if (control.length > 0 &&
                                             (((typeof (cmi.searchoptions) === "undefined" ||
                                             typeof (cmi.searchoptions.sopt) === "undefined")
-                                            && rule.op === myDefaultSearch) ||
+                                            ) ||
                                               (typeof (cmi.searchoptions) === "object" &&
                                                   $.isArray(cmi.searchoptions.sopt) &&
                                                   cmi.searchoptions.sopt.length > 0 &&
