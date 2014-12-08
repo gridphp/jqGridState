@@ -1,11 +1,26 @@
 /**
 *	JQGrid state managment
+* 
 *	@requires json2.js - //cdn.jsdelivr.net/json2/0.1/json2.min.js (JSON serializer)
 *	@requires jstorage.js - //cdn.jsdelivr.net/jstorage/0.1/jstorage.min.js (jStorage plugin)
+* 
+*	Changelog:
+*	- Added toolbar search filter persistance (9-dec-14)
+*	- It will persist various settings of jqGrid on page refresh
 *	- It will persist various settings of jqGrid on page refresh
 *	- It includes: column chooser display, search filters, row selection, subgrid expansion, pager, column order
 *	- To enable, make set property to true when initializing object
 *	- Revamped selection persistance, removed old version
+*
+*	Useful links:
+*
+*	http://stackoverflow.com/questions/19119122/trigger-search-for-jqgrid-filter-on-every-revisit-of-page
+*	http://www.ok-soft-gmbh.com/jqGrid/ColumnChooserAndLocalStorage2_single.htm
+*	http://www.ok-soft-gmbh.com/jqGrid/ColumnChooserAndLocalStorage2_.htm
+*	http://stackoverflow.com/questions/8545953/how-to-persist-current-row-in-jqgrid
+*	http://stackoverflow.com/questions/9308583/jqgrid-how-to-define-filter-presets-templates-inside-a-combo-box
+*	http://www.google.com.pk/search?q=site:www.ok-soft-gmbh.com/jqGrid/+localstorage
+*
 */
 
 var nonModelColumns = ["cb", "subgrid", "rn"];
@@ -158,16 +173,22 @@ function GridState(options) {
 		var prmNames = grid.getGridParam('prmNames');
 		var postData = grid.getGridParam('postData');
 		var sFilter = grid.searchGrid('sFilter');
+		var sFilter = 'filters';
 		if (sFilter) {
 			var fltrData = postData[sFilter];
 			var searchBtn = jQuery('div.ui-pg-div span.ui-icon.ui-icon-search');
 			if (prmNames.search && postData[prmNames.search]) {
 				searchBtn.parent().addClass('ui-state-default ui-corner-all');
 				this.filtersData = JSON.parse(fltrData);
+				alert(JSON.stringify(this.filtersData));
 			}
-			else if (fltrData === '') {
-				searchBtn.parent().removeClass('ui-state-default ui-corner-all');
-				this.filtersData = null;
+			else if (fltrData)
+			{
+				fltrData = JSON.parse(fltrData);
+				if (fltrData.rules.length == 0) {
+					searchBtn.parent().removeClass('ui-state-default ui-corner-all');
+					this.filtersData = null;
+				}
 			}
 		}
 
@@ -186,7 +207,6 @@ function GridState(options) {
 			sortName: grid.getGridParam('sortname'),
 			sortOrder: grid.getGridParam('sortorder')
 		};
-
 		return this;
 	};
 	this.updateGridOptions = function (gridOpts) {
@@ -220,15 +240,79 @@ function GridState(options) {
 		if (this.stateOpts.order && this.orderData) {
 			for (i = 0; i < gridOpts.colModel.length; i++)
 				if (gridOpts.colModel[i].name == this.orderData.sortName
-					&& gridOpts.colModel[i].sortable) { //Exist saved column already
+					&& gridOpts.colModel[i].sortable !== false) { // default sortable is true (undefined = true)
 					gridOpts.sortname = this.orderData.sortName;
 					gridOpts.sortorder = this.orderData.sortOrder;
 				}
 		}
-
+		
+		// post the saved filters at data fetching - azg
+		if (this.stateOpts.filters && this.filtersData) 
+		{
+			gridOpts.search = true;
+			gridOpts.postData = {};
+			gridOpts.postData["filters"] = JSON.stringify(this.filtersData);
+		}			
+				
 		return this;
 	};
+	
+	// show save filters in toolbar - azg
+	this.updateFilterToolbar = function (grid,gridOpts) {
+	
+		if (this.stateOpts.filters && this.filtersData) 
+		{
+			var f = JSON.stringify(this.filtersData),cm=gridOpts.colModel,iCol;
+			var myDefaultSearch = 'cn';
+			
+			if (typeof (f) === "string") {
+
+				var filters = jQuery.parseJSON(f);
+				if (filters && filters.groupOp === "AND" && typeof (filters.groups) === "undefined") {
+					// only in case of advance searching without grouping we import filters in the
+					// searching toolbar
+					rules = filters.rules;
+					for (i = 0, l = rules.length; i < l; i++) {
+						rule = rules[i];
+						// get column index (rule.field)
+						iCol= -1;
+						var cm = gridOpts.colModel, j;
+						for (j = 0; j < cm.length; j++) {
+							if ((cm[j].index || cm[j].name) === rule.field) {
+								iCol= j; // return the colModel index
+							}
+						}
+
+						if (iCol >= 0) {
+							cmi = cm[iCol];
+							control = $("#gs_" + $.jgrid.jqID(cmi.name));
+							 if (control.length > 0 &&
+                                            (((typeof (cmi.searchoptions) === "undefined" ||
+                                            typeof (cmi.searchoptions.sopt) === "undefined")
+                                            && rule.op === myDefaultSearch) ||
+                                              (typeof (cmi.searchoptions) === "object" &&
+                                                  $.isArray(cmi.searchoptions.sopt) &&
+                                                  cmi.searchoptions.sopt.length > 0 &&
+                                                  cmi.searchoptions.sopt[0] === rule.op))) {
+                                        tagName = control[0].tagName.toUpperCase();
+                                        if (tagName === "SELECT") { // && cmi.stype === "select"
+                                            control.find("option[value='" + $.jgrid.jqID(rule.data) + "']")
+                                                .attr('selected', 'selected');
+                                        } else if (tagName === "INPUT") {
+                                            control.val(rule.data);
+                                        }
+                                    }
+						}
+					}
+				}
+			}
+		
+		}
+		
+	}
+	
 	this.updateFilters = function (filterDlg) {
+	
 		function assignValues(fltRow, fltVals) {
 			fltRow.find('select[name=field]').val(fltVals.field).change();
 			fltRow.find('select[name=op]').val(fltVals.op).change();
@@ -307,7 +391,7 @@ function GridState(options) {
 
 				var gridSelector = this;
 				var overrEvts = {};
-
+		
 				if (typeof (opts.loadBeforeSend) !== 'undefined')
 					overrEvts.loadBeforeSend = opts.loadBeforeSend;
 
@@ -392,6 +476,9 @@ function GridState(options) {
 						gState.updateExpansion(grid);
 					}
 
+					// update toolbar filters - azg
+					gState.updateFilterToolbar($(this),opts);
+					
 					var evts = grid.data('overrEvents');
 					if (evts && evts.gridComplete)
 						evts.gridComplete.call(this);
@@ -584,7 +671,6 @@ function GridState(options) {
 					var options = this.data('searchOptions');
 					if (!options)
 						options = {};
-
 					if (typeof (opts) === 'string')
 						return options[opts];
 
