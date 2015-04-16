@@ -2,7 +2,7 @@
 *	JQGrid state managment
 * 
 *	@requires json2.js - //cdn.jsdelivr.net/json2/0.1/json2.min.js (JSON serializer)
-*	@requires jstoshrage.js - //cdn.jsdelivr.net/jstorage/0.1/jstorage.min.js (jStorage plugin)
+*	@requires jstorage.js - //cdn.jsdelivr.net/jstorage/0.1/jstorage.min.js (jStorage plugin)
 * 
 *	Changelog:
 *	- Added toolbar search filter persistance (9-dec-14)
