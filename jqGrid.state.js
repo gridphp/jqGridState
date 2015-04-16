@@ -2,7 +2,7 @@
 *	JQGrid state managment
 * 
 *	@requires json2.js - //cdn.jsdelivr.net/json2/0.1/json2.min.js (JSON serializer)
-*	@requires jstorage.js - //cdn.jsdelivr.net/jstorage/0.1/jstorage.min.js (jStorage plugin)
+*	@requires jstoshrage.js - //cdn.jsdelivr.net/jstorage/0.1/jstorage.min.js (jStorage plugin)
 * 
 *	Changelog:
 *	- Added toolbar search filter persistance (9-dec-14)
@@ -226,8 +226,8 @@ function GridState(options) {
 				}
 			}
 
-			// commented to keep column width resize and horizontal scrollbar
-			// gridOpts.shrinkToFit = true;
+			// disabled to keep column width resize and horizontal scrollbar
+			gridOpts.shrinkToFit = false;
 		}
 
 		if (this.stateOpts.pager && this.pagerData) {
