@@ -226,7 +226,8 @@ function GridState(options) {
 				}
 			}
 
-			gridOpts.shrinkToFit = true;
+			// commented to keep column width resize and horizontal scrollbar
+			// gridOpts.shrinkToFit = true;
 		}
 
 		if (this.stateOpts.pager && this.pagerData) {
