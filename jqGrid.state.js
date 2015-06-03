@@ -5,7 +5,8 @@
 *	@requires jstorage.js - //cdn.jsdelivr.net/jstorage/0.1/jstorage.min.js (jStorage plugin)
 * 
 *	Changelog:
-*	- Added toolbar search filter persistance (9-dec-14)
+*	- Fix for onSelectRow event (3.jun.15)
+* 	- Added toolbar search filter persistance (9-dec-14)
 *	- It will persist various settings of jqGrid on page refresh
 *	- It will persist various settings of jqGrid on page refresh
 *	- It includes: column chooser display, search filters, row selection, subgrid expansion, pager, column order
@@ -442,6 +443,9 @@ function GridState(options) {
 						evts.onSelectAll.call(this);
 				};
 				
+				if (typeof (opts.onSelectRow) !== 'undefined')
+					overrEvts.onSelectRow = opts.onSelectRow;
+
 				opts.onSelectRow = function (rowId, status, e) {
 					var grid = $(gridSelector);
 					var gState = grid.gridState();
@@ -457,7 +461,7 @@ function GridState(options) {
 
 					var evts = grid.data('overrEvents');
 					if (evts && evts.onSelectRow)
-						evts.onSelectRow.call(this);
+						evts.onSelectRow.call(this,rowId);
 				};
 
 				if (typeof (opts.gridComplete) !== 'undefined')
@@ -589,6 +593,11 @@ function GridState(options) {
 						newParams.gridComplete = undefined;
 					}
 
+					if (typeof (newParams.onSelectRow) !== 'undefined') {
+						overrEvts.onSelectRow = newParams.onSelectRow;
+						newParams.onSelectRow = undefined;
+					}
+
 					if (typeof (newParams.subGridRowExpanded) !== 'undefined') {
 						overrEvts.subGridRowExpanded = newParams.subGridRowExpanded;
 						newParams.subGridRowExpanded = undefined;
@@ -635,6 +644,8 @@ function GridState(options) {
 							return overrEvts.beforeRequest;
 						case 'gridComplete':
 							return overrEvts.gridComplete;
+						case 'onSelectRow':
+							return overrEvts.onSelectRow;
 						case 'subGridRowExpanded':
 							return overrEvts.subGridRowExpanded;
 						case 'subGridRowColapsed':
