@@ -471,11 +471,16 @@ function GridState(options) {
 					var grid = $(gridSelector);
 					var gState = grid.gridState();
 					if (gState) {
-						
-						for (var rowId in gState.selRows) {
-							if (gState.selRows[rowId] == true)
-								grid.setSelection(rowId, true);
-						}						
+						// don't attempt to select on virtual scroll. (already selected) - fix azg
+						if (grid.jqGrid('getGridParam','scroll') == 0)
+						{
+							for (var rowId in gState.selRows) {
+								if (gState.selRows[rowId] == true)
+								{
+									grid.setSelection(rowId, true);
+								}
+							}						
+						}
 						
 						gState.updateExpansion(grid);
 					}
