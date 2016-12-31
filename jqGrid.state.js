@@ -471,10 +471,14 @@ function GridState(options) {
 					var grid = $(gridSelector);
 					var gState = grid.gridState();
 					if (gState) {
+
+						var selrows = grid.jqGrid('getGridParam','selarrrow');
 						for (var rowId in gState.selRows) {
 							if (gState.selRows[rowId] == true)
 							{
-								grid.setSelection(rowId, true);
+								// don't attempt to de-select on virtual scroll. (already selected) - fix azg
+								if(selrows.indexOf(rowId) == -1)
+									grid.setSelection(rowId, true);
 							}
 						}						
 						gState.updateExpansion(grid);
