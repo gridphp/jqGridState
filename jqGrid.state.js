@@ -482,11 +482,11 @@ function GridState(options) {
 							}
 						}						
 						gState.updateExpansion(grid);
+
+                        // update toolbar filters - azg
+                        gState.updateFilterToolbar($(this),opts);
 					}
 
-					// update toolbar filters - azg
-					gState.updateFilterToolbar($(this),opts);
-					
 					var evts = grid.data('overrEvents');
 					if (evts && evts.gridComplete)
 						evts.gridComplete.call(this);
