@@ -376,6 +376,13 @@ function GridState(options) {
 			jqGrid: function (opts) {
 				if (typeof (opts) !== "object") {
 					var func = $.fn.jqGrid[opts];
+
+					if (!func) 
+					{
+						var opts_ex = opts.split(".");
+						func = $.fn.jqGrid[opts_ex[0]][opts_ex[1]];
+					}
+					
 					if (!func)
 						throw ("jqGrid - No such method: " + opts)
 
@@ -482,10 +489,9 @@ function GridState(options) {
 							}
 						}						
 						gState.updateExpansion(grid);
+						// update toolbar filters - azg
+						gState.updateFilterToolbar($(this),opts);
 					}
-
-					// update toolbar filters - azg
-					gState.updateFilterToolbar($(this),opts);
 					
 					var evts = grid.data('overrEvents');
 					if (evts && evts.gridComplete)
