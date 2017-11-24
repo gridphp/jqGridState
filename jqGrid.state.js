@@ -379,6 +379,7 @@ function GridState(options) {
 
 					if (!func) 
 					{
+						// azg: take care of grouping.handler case
 						var opts_ex = opts.split(".");
 						func = $.fn.jqGrid[opts_ex[0]][opts_ex[1]];
 					}
