@@ -374,6 +374,10 @@ function GridState(options) {
 		$.fn.extend({
 			_baseJqGrid: $.fn.jqGrid,
 			jqGrid: function (opts) {
+
+				if (typeof (opts) == "undefined")
+					opts = {};
+				
 				if (typeof (opts) !== "object") {
 					var func = $.fn.jqGrid[opts];
 
