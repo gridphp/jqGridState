@@ -5,9 +5,9 @@
 *	@requires jstorage.js - //cdn.jsdelivr.net/jstorage/0.1/jstorage.min.js (jStorage plugin)
 * 
 *	Changelog:
-*	- Fix for onSelectRow event (3.jun.15)
+*	- Fix for multiselect dropdown (13-jul-2022)
+*	- Fix for onSelectRow event (3-jun-15)
 * 	- Added toolbar search filter persistance (9-dec-14)
-*	- It will persist various settings of jqGrid on page refresh
 *	- It will persist various settings of jqGrid on page refresh
 *	- It includes: column chooser display, search filters, row selection, subgrid expansion, pager, column order
 *	- To enable, make set property to true when initializing object
@@ -73,7 +73,7 @@ function GridState(options) {
 		if (this.stateOpts.order)
 			dataToSave.orderData = this.orderData;
 
-		jQuery.jStorage.set(this.stateOpts.storageKey, dataToSave);
+		$.jStorage.set(this.stateOpts.storageKey, dataToSave);
 		return this;
 	};
 	this.load = function (storageKey) {
@@ -81,7 +81,7 @@ function GridState(options) {
 			this.stateOpts.storageKey = storageKey;
 
 		if (this.stateOpts.storageKey) {
-			var savedState = jQuery.jStorage.get(this.stateOpts.storageKey);
+			var savedState = $.jStorage.get(this.stateOpts.storageKey);
 			if (savedState) {
 				this.colsData = savedState.colsData;
 				this.filtersData = savedState.filtersData;
@@ -95,7 +95,7 @@ function GridState(options) {
 		return this;
 	};
 	this.remove = function (storageKey) {
-		jQuery.jStorage.deleteKey(storageKey || this.stateOpts.storageKey);
+		$.jStorage.deleteKey(storageKey || this.stateOpts.storageKey);
 
 		this.colsData = 
 		this.filtersData = 
@@ -286,19 +286,32 @@ function GridState(options) {
 
 						if (iCol >= 0) {
 							cmi = cm[iCol];
-							control = jQuery("#gs_" + jQuery.jgrid.jqID(cmi.name));
+							control = $("#gs_" + $.jgrid.jqID(cmi.name));
 							 if (control.length > 0 &&
                                             (((typeof (cmi.searchoptions) === "undefined" ||
                                             typeof (cmi.searchoptions.sopt) === "undefined")
                                             ) ||
                                               (typeof (cmi.searchoptions) === "object" &&
-                                                  jQuery.isArray(cmi.searchoptions.sopt) &&
+                                                  $.isArray(cmi.searchoptions.sopt) &&
                                                   cmi.searchoptions.sopt.length > 0 &&
                                                   cmi.searchoptions.sopt[0] === rule.op))) {
                                         tagName = control[0].tagName.toUpperCase();
                                         if (tagName === "SELECT") { // && cmi.stype === "select"
-                                            control.find("option[value='" + jQuery.jgrid.jqID(rule.data) + "']")
-                                                .attr('selected', 'selected');
+											// azg: for multiple selection dropdown (multi-select control)
+											if (cmi.searchoptions.multiple)
+											{
+												var values = rule.data.split(',');
+												for (var v in values)
+												{
+													control.find("option[value='" + values[v] + "']")
+													.attr('selected', 'selected');
+												}
+											}
+											else
+											{
+												control.find("option[value='" + $.jgrid.jqID(rule.data) + "']")
+													.attr('selected', 'selected');
+											}
                                         } else if (tagName === "INPUT") {
                                             control.val(rule.data);
                                         }
@@ -369,29 +382,29 @@ function GridState(options) {
 }
 
 //************************ Grid extensions to manipulate state *********************
-(function (jQuery) {
-	if (jQuery.fn.jqGrid) {
-		jQuery.fn.extend({
-			_baseJqGrid: jQuery.fn.jqGrid,
+(function ($) {
+	if ($.fn.jqGrid) {
+		$.fn.extend({
+			_baseJqGrid: $.fn.jqGrid,
 			jqGrid: function (opts) {
 
 				if (typeof (opts) == "undefined")
 					opts = {};
 				
 				if (typeof (opts) !== "object") {
-					var func = jQuery.fn.jqGrid[opts];
+					var func = $.fn.jqGrid[opts];
 
 					if (!func) 
 					{
 						// azg: take care of grouping.handler case
 						var opts_ex = opts.split(".");
-						func = jQuery.fn.jqGrid[opts_ex[0]][opts_ex[1]];
+						func = $.fn.jqGrid[opts_ex[0]][opts_ex[1]];
 					}
 					
 					if (!func)
 						throw ("jqGrid - No such method: " + opts)
 
-					var args = jQuery.makeArray(arguments).slice(1);
+					var args = $.makeArray(arguments).slice(1);
 					return func.apply(this, args);
 				}
 
@@ -409,7 +422,7 @@ function GridState(options) {
 					overrEvts.loadBeforeSend = opts.loadBeforeSend;
 
 				opts.loadBeforeSend = function (xmlHttpReq) {
-					var grid = jQuery(gridSelector);
+					var grid = $(gridSelector);
 					var gState = grid.gridState();
 					if (gState) {
 						gState.refreshFilters(grid);
@@ -430,7 +443,7 @@ function GridState(options) {
 					overrEvts.onSelectAll = opts.onSelectAll;
 
 				opts.onSelectAll = function (rowIds, status) {
-					var grid = jQuery(gridSelector);
+					var grid = $(gridSelector);
 					var gState = grid.gridState();
 					if (gState) {
 
@@ -459,7 +472,7 @@ function GridState(options) {
 					overrEvts.onSelectRow = opts.onSelectRow;
 
 				opts.onSelectRow = function (rowId, status, e) {
-					var grid = jQuery(gridSelector);
+					var grid = $(gridSelector);
 					var gState = grid.gridState();
 					if (gState) {
 
@@ -480,7 +493,7 @@ function GridState(options) {
 					overrEvts.gridComplete = opts.gridComplete;
 
 				opts.gridComplete = function () {
-					var grid = jQuery(gridSelector);
+					var grid = $(gridSelector);
 					var gState = grid.gridState();
 					if (gState) {
 
@@ -495,7 +508,7 @@ function GridState(options) {
 						}						
 						gState.updateExpansion(grid);
 						// update toolbar filters - azg
-						gState.updateFilterToolbar(jQuery(this),opts);
+						gState.updateFilterToolbar($(this),opts);
 					}
 					
 					var evts = grid.data('overrEvents');
@@ -507,7 +520,7 @@ function GridState(options) {
 					overrEvts.subGridRowExpanded = opts.subGridRowExpanded;
 
 				opts.subGridRowExpanded = function (pID, id) {
-					var grid = jQuery(gridSelector);
+					var grid = $(gridSelector);
 					var gState = grid.gridState();
 					if (gState) {
 						gState.addExpRow(id);
@@ -523,7 +536,7 @@ function GridState(options) {
 					overrEvts.subGridRowColapsed = opts.subGridRowColapsed;
 
 				opts.subGridRowColapsed = function (pID, id) {
-					var grid = jQuery(gridSelector);
+					var grid = $(gridSelector);
 					var gState = grid.gridState();
 					if (gState) {
 						gState.delExpRow(id);
@@ -535,14 +548,14 @@ function GridState(options) {
 						evts.subGridRowColapsed.call(this, pID, id);
 				};
 
-				jQuery(this).data('overrEvents', overrEvts);
+				$(this).data('overrEvents', overrEvts);
 
 				if (gState)
-					jQuery(this).gridState(gState);
+					$(this).gridState(gState);
 
 				var result = this._baseJqGrid.call(this, opts);
 				if (result.length && result[0].grid && result[0].grid.dragEnd) {
-					jQuery.extend(result[0].grid, {
+					$.extend(result[0].grid, {
 						_baseDragEnd: result[0].grid.dragEnd,
 						dragEnd: function () {
 							this._baseDragEnd.call(this);
@@ -554,22 +567,22 @@ function GridState(options) {
 						}
 					});
 
-					jQuery.extend(result[0].grid.dragEnd, result[0].grid._baseDragEnd);
+					$.extend(result[0].grid.dragEnd, result[0].grid._baseDragEnd);
 				}
 				else {
-					jQuery(this).removeData('overrEvents');
-					jQuery(this).gridState(null);
+					$(this).removeData('overrEvents');
+					$(this).gridState(null);
 				}
 
 				return result;
 			}
 		});
 
-		jQuery.extend(jQuery.fn.jqGrid, jQuery.fn._baseJqGrid);
+		$.extend($.fn.jqGrid, $.fn._baseJqGrid);
 
-		if (jQuery.fn.showHideCol) {
-			jQuery.jgrid.extend({
-				_baseShowHideCol: jQuery.fn.showHideCol,
+		if ($.fn.showHideCol) {
+			$.jgrid.extend({
+				_baseShowHideCol: $.fn.showHideCol,
 				showHideCol: function (colname, show) {
 					
 					// fix to readjust width after new column selection
@@ -588,14 +601,14 @@ function GridState(options) {
 				}
 			});
 
-			jQuery.extend(jQuery.fn.showHideCol, jQuery.fn._baseShowHideCol);
+			$.extend($.fn.showHideCol, $.fn._baseShowHideCol);
 		}
 
-		if (jQuery.fn.setGridParam) {
-			jQuery.jgrid.extend({
-				_baseSetGridParam: jQuery.fn.setGridParam,
+		if ($.fn.setGridParam) {
+			$.jgrid.extend({
+				_baseSetGridParam: $.fn.setGridParam,
 				setGridParam: function (newParams) {
-					var grid = jQuery(this);
+					var grid = $(this);
 					var overrEvts = grid.data('overrEvents');
 
 					if (typeof (newParams.loadBeforeSend) !== 'undefined') {
@@ -646,14 +659,14 @@ function GridState(options) {
 				}
 			});
 
-			jQuery.extend(jQuery.fn.setGridParam, jQuery.fn._baseSetGridParam);
+			$.extend($.fn.setGridParam, $.fn._baseSetGridParam);
 		}
 
-		if (jQuery.fn.getGridParam) {
-			jQuery.jgrid.extend({
-				_baseGetGridParam: jQuery.fn.getGridParam,
+		if ($.fn.getGridParam) {
+			$.jgrid.extend({
+				_baseGetGridParam: $.fn.getGridParam,
 				getGridParam: function (pName) {
-					var overrEvts = jQuery(this).data('overrEvents') || {};
+					var overrEvts = $(this).data('overrEvents') || {};
 					switch (pName) {
 						case 'beforeRequest':
 							return overrEvts.beforeRequest;
@@ -671,12 +684,12 @@ function GridState(options) {
 				}
 			});
 
-			jQuery.extend(jQuery.fn.getGridParam, jQuery.fn._baseGetGridParam);
+			$.extend($.fn.getGridParam, $.fn._baseGetGridParam);
 		}
 
-		if (jQuery.fn.remapColumns) {
-			jQuery.jgrid.extend({
-				_baseRemapColumns: jQuery.fn.remapColumns,
+		if ($.fn.remapColumns) {
+			$.jgrid.extend({
+				_baseRemapColumns: $.fn.remapColumns,
 				remapColumns: function (permutation, updateCells, keepHeader) {
 					this._baseRemapColumns.call(this, permutation, updateCells, keepHeader);
 					var gState = this.gridState();
@@ -687,12 +700,12 @@ function GridState(options) {
 				}
 			});
 
-			jQuery.extend(jQuery.fn.remapColumns, jQuery.fn._baseRemapColumns);
+			$.extend($.fn.remapColumns, $.fn._baseRemapColumns);
 		}
 
-		if (jQuery.fn.searchGrid) {
-			jQuery.jgrid.extend({
-				_baseSearchGrid: jQuery.fn.searchGrid,
+		if ($.fn.searchGrid) {
+			$.jgrid.extend({
+				_baseSearchGrid: $.fn.searchGrid,
 				searchGrid: function (opts) {
 					var options = this.data('searchOptions');
 					if (!options)
@@ -700,11 +713,11 @@ function GridState(options) {
 					if (typeof (opts) === 'string')
 						return options[opts];
 
-					this.data('searchOptions', jQuery.extend(options, opts));
+					this.data('searchOptions', $.extend(options, opts));
 					var result = this._baseSearchGrid.call(this, opts);
 					var gState = this.gridState();
 					if (gState) {
-						var filterDlg = jQuery('#fbox_' + this.attr('id'));
+						var filterDlg = $('#fbox_' + this.attr('id'));
 						gState.updateFilters(filterDlg);
 					}
 
@@ -712,10 +725,10 @@ function GridState(options) {
 				}
 			});
 
-			jQuery.extend(jQuery.fn.searchGrid, jQuery.fn._baseSearchGrid);
+			$.extend($.fn.searchGrid, $.fn._baseSearchGrid);
 		}
 
-		jQuery.jgrid.extend({
+		$.jgrid.extend({
 			gridState: function (gState) {
 				if (gState === null) {
 					var curState = this.data('gridState');
