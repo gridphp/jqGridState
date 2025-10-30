@@ -178,7 +178,7 @@ function GridState(options) {
 		if (sFilter) {
 			var fltrData = postData[sFilter];
 			var searchBtn = jQuery('div.ui-pg-div span.ui-icon.ui-icon-search');
-			if (prmNames.search && postData[prmNames.search]) {
+			if (prmNames.search && postData[prmNames.search] && fltrData) {
 				searchBtn.parent().addClass('ui-state-default ui-corner-all');
 				this.filtersData = JSON.parse(fltrData);
 			}
