@@ -401,7 +401,6 @@ function GridState(options) {
      * Called AFTER grid is created
      */
     this.updateFilterToolbar = function(grid, gridOpts) {
-        
         if (this.stateOpts.filters && this.filtersData) {
             var f = JSON.stringify(this.filtersData);
             var cm = gridOpts.colModel;
@@ -431,7 +430,7 @@ function GridState(options) {
                         if (iCol >= 0) {
                             cmi = cm[iCol];
                             // Get the toolbar search control for this column
-                            control = jQuery("#gs_" + jQuery.jgrid.jqID(cmi.name));
+                            control = jQuery("#gbox_"+grid[0].id+" #gs_" + jQuery.jgrid.jqID(cmi.name));
                             
                             // Check if control exists and operation matches
                             if (control.length > 0 &&
@@ -738,7 +737,7 @@ function GridState(options) {
                         gState.updateFilterToolbar(jQuery(this), opts);
 
                         // reselect multiselect filter on refresh, if any
-                        jQuery('button.ui-multiselect[id^=gs_]').each(function(){
+                        jQuery('#gbox_'+grid[0].id+' button.ui-multiselect[id^=gs_]').each(function(){
                             jQuery('#'+jQuery(this).attr('id').replace('_ms','')).multiselect('refresh',true);
                         });
                     }
